@@ -103,10 +103,7 @@ int main(void)
   MX_FATFS_Init();
   MX_LWIP_Init();
   /* USER CODE BEGIN 2 */
-  float32_t a[] = {1.0, 1.0};
-  float32_t a_amp = 0;
 
-  arm_cmplx_mag_f32(a, &a_amp, 1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
