@@ -23,6 +23,7 @@
 #include "fatfs.h"
 #include "lwip.h"
 #include "spi.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -102,7 +103,14 @@ int main(void)
   MX_ADC1_Init();
   MX_FATFS_Init();
   MX_LWIP_Init();
+  MX_TIM9_Init();
+  MX_TIM10_Init();
   /* USER CODE BEGIN 2 */
+  HAL_TIM_PWM_Start(&htim9, TIM_CHANNEL_1);
+  HAL_TIM_Base_Start_IT(&htim10);
+
+
+
 
   /* USER CODE END 2 */
 
@@ -169,7 +177,13 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef *htim)
+{
+  if (htim->Instance == htim10.Instance)
+  {
+	  cycle_heater();
+  }
+}
 /* USER CODE END 4 */
 
 /**

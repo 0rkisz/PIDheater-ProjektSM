@@ -8,6 +8,6 @@
 #ifndef INC_WEB_H_
 #define INC_WEB_H_
 
-
+#include "main.h"
 
 #endif /* INC_WEB_H_ */
