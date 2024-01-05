@@ -8,19 +8,25 @@
 #ifndef INC_GRZALKA_DEFS_H_
 #define INC_GRZALKA_DEFS_H_
 #include "main.h"
-#include "adc.h"
+
 struct heater_data
 {
     /*! Compensated pressure */
-    uint32_t pressure;
+    float pressure;
 
     /*! Compensated temperature */
-    int32_t temperature;
+    float temperature;
+
+    float u;
+
+    float xref;
 };
 struct pid_config
 {
-	uint8_t P;
-	uint8_t I;
-	uint8_t D;
+	float P;
+	float I;
+	float D;
 };
+
+#define dt 0.005f
 #endif /* INC_GRZALKA_DEFS_H_ */

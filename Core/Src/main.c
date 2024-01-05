@@ -22,7 +22,9 @@
 #include "crc.h"
 #include "fatfs.h"
 #include "lwip.h"
+#include "rtc.h"
 #include "spi.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -34,6 +36,9 @@
 #include "web.h"
 #include "memo.h"
 #include "serial_communication.h"
+//#include "lwip/apps/sntp.h"
+
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -55,6 +60,10 @@
 
 /* USER CODE BEGIN PV */
 struct heater_data heat_d;
+
+char Rx_data[2], Rx_Buffer[20], Transfer_cplt;
+uint16_t Rx_indx;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -65,7 +74,52 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
 
+	if (huart == &huart3)
+	{
+		uint8_t i=0;
+		//int j=0;
+		if (Rx_indx==0) {for (i=0;i<22;i++) Rx_Buffer[i]=0;} //clear Rx_Buffer before receiving new data
+
+		if (Rx_data[0]!=13)	//if received data different from ascii 13 (enter)
+			{
+			Rx_Buffer[Rx_indx++]=Rx_data[0];	//add data to Rx_Buffer
+			}
+		else			//if received data = 13
+			{
+			Rx_indx=0;
+			Transfer_cplt=1;//transfer complete, data is ready to read
+			HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+			}
+
+		if (Transfer_cplt == 1)
+		{
+
+			//for (j=0;j<3;j++) preVal[j]=&Rx_Buffer[j+1];
+			//preVal=&Rx_Buffer[1];
+			int a,b,c,d;
+			a=b=c=d=0;
+			char string[2];
+			sscanf(Rx_Buffer,"%2s=%d.%d.%d.%d",string,&a,&b,&c,&d);
+			if(strcmp(string,"ip")==0)
+			{
+				sntpreconfig(&a, &b, &c, &d);
+			}
+
+
+
+
+			Transfer_cplt = 0;
+
+		}
+
+
+		HAL_UART_Receive_IT(&huart3,(uint8_t*)&Rx_data, 1);	//activate UART receive interrupt every time
+	}
+
+}
 /* USER CODE END 0 */
 
 /**
@@ -102,8 +156,18 @@ int main(void)
   MX_ADC1_Init();
   MX_FATFS_Init();
   MX_LWIP_Init();
+  MX_TIM9_Init();
+  MX_TIM10_Init();
+  MX_RTC_Init();
   /* USER CODE BEGIN 2 */
+  HAL_TIM_PWM_Start(&htim9, TIM_CHANNEL_1);
+  HAL_TIM_Base_Start_IT(&htim10);
+  HAL_UART_Receive_IT(&huart3, (uint8_t*)&Rx_data, 1);
 
+  internetprawdepowie();
+
+  zegarmistrzswiatla();
+  uint8_t k=100;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -113,8 +177,17 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
+	  MX_LWIP_Process();
+	  HAL_Delay(10);
+	  k--;
+	  if(k==0)
+	  {
+		  k=100;
+		  zegarmistrzswiatla();
+	  }
 	  //cycle_heater(); // uruchomienie tego w taki sposób grozi poparzeniem lol
+
+
   }
   /* USER CODE END 3 */
 }
@@ -131,6 +204,7 @@ void SystemClock_Config(void)
   /** Configure LSE Drive Capability
   */
   HAL_PWR_EnableBkUpAccess();
+  __HAL_RCC_LSEDRIVE_CONFIG(RCC_LSEDRIVE_LOW);
 
   /** Configure the main internal regulator output voltage
   */
@@ -140,8 +214,9 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_BYPASS;
+  RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 4;
@@ -169,7 +244,13 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef *htim)
+{
+  if (htim->Instance == htim10.Instance)
+  {
+	  cycle_heater();
+  }
+}
 /* USER CODE END 4 */
 
 /**

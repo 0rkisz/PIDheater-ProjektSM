@@ -8,6 +8,10 @@
 #ifndef INC_SERIAL_COMMUNICATION_H_
 #define INC_SERIAL_COMMUNICATION_H_
 
+#include "main.h"
+
+
+
 
 
 #endif /* INC_SERIAL_COMMUNICATION_H_ */
