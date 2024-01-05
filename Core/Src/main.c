@@ -161,7 +161,7 @@ int main(void)
   MX_RTC_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_PWM_Start(&htim9, TIM_CHANNEL_1);
-  //HAL_TIM_Base_Start_IT(&htim10);
+  HAL_TIM_Base_Start_IT(&htim10);
   HAL_UART_Receive_IT(&huart3, (uint8_t*)&Rx_data, 1);
 
   internetprawdepowie();
@@ -248,7 +248,7 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef *htim)
 {
   if (htim->Instance == htim10.Instance)
   {
-	  //cycle_heater();
+	  cycle_heater();
   }
 }
 /* USER CODE END 4 */
