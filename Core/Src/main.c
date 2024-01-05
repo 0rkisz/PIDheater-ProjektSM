@@ -36,6 +36,12 @@
 #include "web.h"
 #include "memo.h"
 #include "serial_communication.h"
+
+/*microSD card*/
+#include "fatfs_sd.h"
+#include "string.h"
+#include "stdio.h"
+#include "user_microSD.h"
 //#include "lwip/apps/sntp.h"
 
 
@@ -63,6 +69,15 @@ struct heater_data heat_d;
 
 char Rx_data[2], Rx_Buffer[20], Transfer_cplt;
 uint16_t Rx_indx;
+
+//RTC_TimeTypeDef czas;
+//RTC_DateTypeDef date;
+RTC_TimeTypeDef czas1;
+RTC_DateTypeDef date1;
+
+/* microSD card*/
+FATFS fs;
+FIL fil;
 
 /* USER CODE END PV */
 
@@ -184,6 +199,11 @@ int main(void)
 	  {
 		  k=100;
 		  zegarmistrzswiatla();
+		  HAL_RTC_GetTime(&hrtc, &czas1, RTC_FORMAT_BIN);
+		  HAL_RTC_GetDate(&hrtc, &date1, RTC_FORMAT_BIN);
+
+		  user_f_write (&fs, &fil, "log.txt", &czas1, &date1);
+
 	  }
 	  //cycle_heater(); // uruchomienie tego w taki sposób grozi poparzeniem lol
 
@@ -244,13 +264,13 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef *htim)
-{
-  if (htim->Instance == htim10.Instance)
-  {
-	  cycle_heater();
-  }
-}
+//void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef *htim)
+//{
+//  if (htim->Instance == htim10.Instance)
+//  {
+//	  cycle_heater();
+//  }
+//}
 /* USER CODE END 4 */
 
 /**
