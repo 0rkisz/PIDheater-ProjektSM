@@ -63,7 +63,9 @@ struct heater_data heat_d;
 
 char Rx_data[2], Rx_Buffer[20], Transfer_cplt;
 uint16_t Rx_indx;
-
+char message[50];
+float idk = 69.9;
+uint8_t oneopportunity = 1;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -161,13 +163,26 @@ int main(void)
   MX_RTC_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_PWM_Start(&htim9, TIM_CHANNEL_1);
-  HAL_TIM_Base_Start_IT(&htim10);
+  //HAL_TIM_Base_Start_IT(&htim10);
   HAL_UART_Receive_IT(&huart3, (uint8_t*)&Rx_data, 1);
 
   internetprawdepowie();
 
   zegarmistrzswiatla();
-  uint8_t k=100;
+  uint8_t k=10;
+  while(k>2)
+  {
+	  k--;
+	  MX_LWIP_Process();
+	  HAL_Delay(1000);
+  }
+  k=100;
+  mqtt_client_t* client;
+  client = mqtt_client_new();
+  	  if(client != NULL)
+  	  {
+  		  mqtt_connect_to_broker(client);
+  	  }
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -184,6 +199,20 @@ int main(void)
 	  {
 		  k=100;
 		  zegarmistrzswiatla();
+
+		  if(mqtt_client_is_connected(client))
+		  {
+			  uint16_t message_length = 0;
+			  message_length = snprintf(message,49,"\"Cebularz\":%0.3f",idk);
+
+			  err_t err;
+			  u8_t qos = 2;
+			  u8_t retain = 0;
+			  err = mqtt_publish(client, "stm/test", message, message_length, qos, retain, mqtt_pub_request_cb, 0);
+			  if(err != ERR_OK)
+			  {
+
+			  }		  }
 	  }
 	  //cycle_heater(); // uruchomienie tego w taki sposób grozi poparzeniem lol
 
