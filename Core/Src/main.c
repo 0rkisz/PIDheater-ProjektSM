@@ -36,6 +36,12 @@
 #include "web.h"
 #include "memo.h"
 #include "serial_communication.h"
+
+/*microSD card*/
+#include "fatfs_sd.h"
+#include "string.h"
+#include "stdio.h"
+#include "user_microSD.h"
 //#include "lwip/apps/sntp.h"
 
 
@@ -63,6 +69,15 @@ struct heater_data heat_d;
 
 char Rx_data[2], Rx_Buffer[20], Transfer_cplt;
 uint16_t Rx_indx;
+
+//RTC_TimeTypeDef czas;
+//RTC_DateTypeDef date;
+RTC_TimeTypeDef czas1;
+RTC_DateTypeDef date1;
+
+/* microSD card*/
+FATFS fs;
+FIL fil;
 
 /* USER CODE END PV */
 
@@ -159,15 +174,20 @@ int main(void)
   MX_TIM9_Init();
   MX_TIM10_Init();
   MX_RTC_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_PWM_Start(&htim9, TIM_CHANNEL_1);
   HAL_TIM_Base_Start_IT(&htim10);
   HAL_UART_Receive_IT(&huart3, (uint8_t*)&Rx_data, 1);
+  HAL_TIM_Base_Start_IT(&htim3);  //timer SD card
 
   internetprawdepowie();
 
   zegarmistrzswiatla();
   uint8_t k=100;
+
+  user_f_clear (&fs, &fil, "log.txt");
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -178,13 +198,18 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	  MX_LWIP_Process();
-	  HAL_Delay(10);
-	  k--;
-	  if(k==0)
-	  {
-		  k=100;
-		  zegarmistrzswiatla();
-	  }
+//	  HAL_Delay(10);
+//	  k--;
+//	  if(k==0)
+//	  {
+//		  k=100;
+//		  //zegarmistrzswiatla();
+//		  HAL_RTC_GetTime(&hrtc, &czas1, RTC_FORMAT_BIN);
+//		  HAL_RTC_GetDate(&hrtc, &date1, RTC_FORMAT_BIN);
+//		  get_sensor_data(&heat_d);
+//		  user_f_write (&fs, &fil, "log.txt", &czas1, &date1, &heat_d);
+//		  user_f_read(&fs, &fil, "log.txt");
+//	  }
 	  //cycle_heater(); // uruchomienie tego w taki sposób grozi poparzeniem lol
 
 
@@ -249,6 +274,15 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef *htim)
   if (htim->Instance == htim10.Instance)
   {
 	  cycle_heater();
+  }
+
+  if (htim->Instance == TIM3)
+  {
+	  HAL_RTC_GetTime(&hrtc, &czas1, RTC_FORMAT_BIN);
+	  HAL_RTC_GetDate(&hrtc, &date1, RTC_FORMAT_BIN);
+	  get_sensor_data(&heat_d);
+	  user_f_write (&fs, &fil, "log.txt", &czas1, &date1, &heat_d);
+	  //user_f_read(&fs, &fil, "log.txt");
   }
 }
 /* USER CODE END 4 */
