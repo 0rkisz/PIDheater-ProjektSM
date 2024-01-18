@@ -78,7 +78,7 @@ RTC_DateTypeDef date1;
 /* microSD card*/
 FATFS fs;
 FIL fil;
-
+uint8_t kartasd;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -198,6 +198,15 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	  MX_LWIP_Process();
+
+	  if (kartasd==1)
+	  {
+		  HAL_RTC_GetTime(&hrtc, &czas1, RTC_FORMAT_BIN);
+		  HAL_RTC_GetDate(&hrtc, &date1, RTC_FORMAT_BIN);
+		  get_sensor_data(&heat_d);
+		  user_f_write (&fs, &fil, "log.txt", &czas1, &date1, &heat_d);
+		  kartasd = 0;
+	  }
 //	  HAL_Delay(10);
 //	  k--;
 //	  if(k==0)
@@ -271,6 +280,7 @@ void SystemClock_Config(void)
 /* USER CODE BEGIN 4 */
 void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef *htim)
 {
+
   if (htim->Instance == htim10.Instance)
   {
 	  cycle_heater();
@@ -278,10 +288,8 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef *htim)
 
   if (htim->Instance == TIM3)
   {
-	  HAL_RTC_GetTime(&hrtc, &czas1, RTC_FORMAT_BIN);
-	  HAL_RTC_GetDate(&hrtc, &date1, RTC_FORMAT_BIN);
-	  get_sensor_data(&heat_d);
-	  user_f_write (&fs, &fil, "log.txt", &czas1, &date1, &heat_d);
+	  kartasd = 1;
+	  //user_f_write (&fs, &fil, "log.txt", &czas1, &date1, &heat_d);
 	  //user_f_read(&fs, &fil, "log.txt");
   }
 }
