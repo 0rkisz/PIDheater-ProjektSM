@@ -95,46 +95,75 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
             //preVal=&Rx_Buffer[1];
         	uint32_t receive_crc;
             int Tem1,P1,I1,D1,IP11,IP21,IP31,IP41;
-            Tem1=P1=I1=D1=IP11=IP21=IP31=IP41=1;
+            Tem1=P1=I1=D1=IP11=IP21=IP31=IP41=0;
 
             //char string[20];
             sscanf(Rx_Buffer,"Tem=%d;P=%d;I=%d;D=%d;IP=%d.%d.%d.%d;",&Tem1,&P1,&I1,&D1,&IP11,&IP21,&IP31,&IP41);
             receive_crc = HAL_CRC_Calculate(&hcrc, (uint32_t*)Rx_Buffer, sizeof(Rx_Buffer));
             if (Tem1 == 1224)
-            	{
+            {
             	Tem = Tem;
-            	}
-            else if(P1 == 1224)
-            {
-            	P = P;
-            }
-            else if(I1 == 1224)
-            {
-               	I = I;
-            }
-            else if(D1 == 1224)
-            {
-            	D = D;
-            }
-            else if(IP11 == 1224)
-            {
-            	IP1 = IP1;
-            	IP2 = IP2;
-            	IP3 = IP3;
-            	IP4 = IP4;
-	        }
-            else
-            {
-            	Tem = Tem1;
-            	P = P1;
-            	I = I1;
-            	D = D1;
-            	IP1 = IP11;
-            	IP2 = IP21;
-            	IP3 = IP31;
-            	IP4 = IP41;
-
-            }
+             }
+             if(Tem1 != 1224)
+             {
+               	Tem = Tem1;
+              }
+              if (P1 == 1224)
+              {
+                 P = P;
+               }
+              if(P1 != 1224)
+               {
+               P = P1;
+               }
+              if(I1 == 1224)
+              {
+                   I = I;
+              	  }
+               if(I1 != 1224)
+               {
+                   I = I1;
+                }
+                if(D1 == 1224)
+                 {
+                    D = D;
+            	 }
+                 if(D1 != 1224)
+                 {
+                    D = D1;
+                 }
+                 if(IP11 == 1224)
+                 {
+                    IP1 = IP1;
+                  }
+                  if(IP11 != 1224)
+                  {
+                    IP1 = IP11;
+                  }
+                  if(IP21 == 1224)
+                  {
+                    IP2 = IP2;
+                   }
+                   if(IP21 != 1224)
+                   {
+                     IP2 = IP21;
+                    }
+                   if(IP31 == 1224)
+                    {
+                       IP3 = IP3;
+                     }
+                    if(IP31 != 1224)
+                     {
+                       IP3 = IP31;
+                      }
+                     if(IP41 == 1224)
+                      {
+                       IP4 = IP4;
+                       }
+                      if(IP41 != 1224)
+                       {
+                      	IP4 = IP41;
+                       }
 
             //sscanf(Rx_Buffer,"%d",string,&a,&b,&c,&d);
 
