@@ -65,6 +65,96 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+int Tem,P,I,D,IP1,IP2,IP3,IP4;
+int Rx_indx, Transfer_cplt;
+char Rx_Buffer [50], Rx_data [1];
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+
+    if (huart == &huart3)
+    {
+        uint8_t i=0;
+        //int j=0;
+        if (Rx_indx==0) {for (i=0;i<49;i++) Rx_Buffer[i]=0;} //clear Rx_Buffer before receiving new data
+
+        if (Rx_data[0]!=10)    //if received data different from ascii 13 (enter)
+            {
+            Rx_Buffer[Rx_indx++]=Rx_data[0];    //add data to Rx_Buffer
+            }
+        else            //if received data = 13
+            {
+            Rx_indx=0;
+            Transfer_cplt=1;//transfer complete, data is ready to read
+            HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+            }
+
+        if (Transfer_cplt == 1)
+        {
+
+            //for (j=0;j<3;j++) preVal[j]=&Rx_Buffer[j+1];
+            //preVal=&Rx_Buffer[1];
+        	uint32_t receive_crc;
+            int Tem1,P1,I1,D1,IP11,IP21,IP31,IP41;
+            Tem1=P1=I1=D1=IP11=IP21=IP31=IP41=1;
+
+            //char string[20];
+            sscanf(Rx_Buffer,"Tem=%d;P=%d;I=%d;D=%d;IP=%d.%d.%d.%d;",&Tem1,&P1,&I1,&D1,&IP11,&IP21,&IP31,&IP41);
+            receive_crc = HAL_CRC_Calculate(&hcrc, (uint32_t*)Rx_Buffer, sizeof(Rx_Buffer));
+            if (Tem1 == 1224)
+            	{
+            	Tem = Tem;
+            	}
+            else if(P1 == 1224)
+            {
+            	P = P;
+            }
+            else if(I1 == 1224)
+            {
+               	I = I;
+            }
+            else if(D1 == 1224)
+            {
+            	D = D;
+            }
+            else if(IP11 == 1224)
+            {
+            	IP1 = IP1;
+            	IP2 = IP2;
+            	IP3 = IP3;
+            	IP4 = IP4;
+	        }
+            else
+            {
+            	Tem = Tem1;
+            	P = P1;
+            	I = I1;
+            	D = D1;
+            	IP1 = IP11;
+            	IP2 = IP21;
+            	IP3 = IP31;
+            	IP4 = IP41;
+
+            }
+
+            //sscanf(Rx_Buffer,"%d",string,&a,&b,&c,&d);
+
+////            if(strcmp(string,"ip")==0)1
+////            {
+////            	sntpreconfig(&a, &b, &c, &d);
+////            }
+//
+//
+//
+//
+            Transfer_cplt = 0;
+//
+        }
+//
+//
+        HAL_UART_Receive_IT(&huart3,(uint8_t*)&Rx_data, 1);    //activate UART receive interrupt every time
+    }
+
+}
 
 /* USER CODE END 0 */
 
@@ -103,13 +193,20 @@ int main(void)
   MX_FATFS_Init();
   MX_LWIP_Init();
   /* USER CODE BEGIN 2 */
-
+  char full[100];
+  uint16_t len;
+  uint32_t crc8 = 0;
+  HAL_UART_Receive_IT(&huart3,(uint8_t*)&Rx_data, 1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  len  = snprintf(full,sizeof(full),"Tem=%d;P=%d;I=%d;D=%d;IP=%d.%d.%d.%d;crc:%02X\r\n",Tem,P,I,D,IP1,IP2,IP3,IP4,(uint8_t)crc8);
+	  crc8 = HAL_CRC_Calculate(&hcrc, (uint32_t*)full, sizeof(full));
+	  HAL_UART_Transmit(&huart3, (uint8_t*)full, len, 1000);
+  	  HAL_Delay(5000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
