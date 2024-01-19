@@ -37,8 +37,8 @@ void SNTP_SecondsSetRTC(uint64_t seconds)
 	HAL_RTC_SetTime(&hrtc, &rtc_time, RTC_FORMAT_BIN);
 	HAL_RTC_SetDate(&hrtc, &rtc_date, RTC_FORMAT_BIN);
 
-	char c_time_string[80], serial_buffer[150];
-	ctime_r(&sntp_time, c_time_string);
-	int length = snprintf((char*)serial_buffer, 149,"SNTP UTC time received %s\r\n", c_time_string);
-	HAL_UART_Transmit(&huart3, (uint8_t*)serial_buffer, length, 1000);
+//	char c_time_string[80], serial_buffer[150];
+//	ctime_r(&sntp_time, c_time_string);
+//	int length = snprintf((char*)serial_buffer, 149,"SNTP UTC time received %s\r\n", c_time_string);
+//	HAL_UART_Transmit(&huart3, (uint8_t*)serial_buffer, length, 1000);
 }
