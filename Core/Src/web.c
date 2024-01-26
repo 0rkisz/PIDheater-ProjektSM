@@ -63,3 +63,56 @@ void sntpreconfig(int *a,int *b,int *c,int *d)
 	sntp_init();
 
 }
+
+void mqtt_connect_to_broker(mqtt_client_t *client)
+{
+	ip_addr_t mqtt_broker_addr;
+	struct mqtt_connect_client_info_t ci;
+	err_t err;
+	ipaddr_aton("192.168.1.13", &mqtt_broker_addr);
+
+	memset(&ci, 0, sizeof(ci));
+
+	ci.client_id = "my_mqtt_id";
+	ci.keep_alive = 50000;
+
+	do{
+		err = mqtt_client_connect(client, &mqtt_broker_addr, MQTT_PORT, mqtt_connection_cb, 0, &ci);
+		HAL_Delay(100);
+		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+	} while (err != ERR_OK || err != ERR_ISCONN );
+}
+void mqtt_connection_cb(mqtt_client_t *client, void *arg, mqtt_connection_status_t status)
+{
+	err_t err;
+	if(status == MQTT_CONNECT_ACCEPTED)
+	{
+		mqtt_set_inpub_callback(client, mqtt_incoming_publish_cb, mqtt_incoming_data_cb, arg);
+
+		err = mqtt_subscribe(client, "stm/test", 1, mqtt_sub_request_cb,arg);
+
+		if(err != ERR_OK)
+		{
+
+		} else {
+			mqtt_connect_to_broker(client);
+		}
+	}
+}
+void mqtt_incoming_publish_cb(void *arg, const char *topic, u32_t tot_len)
+{
+
+}
+void mqtt_incoming_data_cb(void *arg, const u8_t *data, u16_t len, u8_t flags)
+{
+
+}
+void mqtt_sub_request_cb(void *arg, err_t result)
+{
+
+}
+void mqtt_pub_request_cb(void *arg, err_t result)
+{
+
+}
+
