@@ -41,7 +41,17 @@
 #include "fatfs_sd.h"
 #include "string.h"
 #include "stdio.h"
+#include "stdlib.h"
 #include "user_microSD.h"
+
+/* klawiaturka*/
+#include "klawiatur.h"
+
+/*Wyswietlacz*/
+#include "ILI9341_STM32_Driver.h"
+#include "ILI9341_GFX.h"
+#include "snow_tiger.h"
+
 //#include "lwip/apps/sntp.h"
 
 
@@ -67,7 +77,7 @@
 /* USER CODE BEGIN PV */
 struct heater_data heat_d;
 
-char Rx_data[2], Rx_Buffer[20], Transfer_cplt;
+char Rx_data[2], Rx_Buffer[20], Transfer_cplt, wyswietlacz[50];
 uint16_t Rx_indx;
 
 //RTC_TimeTypeDef czas;
@@ -79,6 +89,11 @@ RTC_DateTypeDef date1;
 FATFS fs;
 FIL fil;
 
+/*klawiaturka*/
+//bufor przechowujący dwie cyfry zadanej temperatury do zapodania mieszkowi
+int bufor_mieszka;
+int idx_buf = 0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -89,6 +104,7 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef *htim);
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 
@@ -175,11 +191,18 @@ int main(void)
   MX_TIM10_Init();
   MX_RTC_Init();
   MX_TIM3_Init();
+  MX_TIM11_Init();
+  MX_SPI5_Init();
+  MX_TIM13_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_PWM_Start(&htim9, TIM_CHANNEL_1);
   HAL_TIM_Base_Start_IT(&htim10);
   HAL_UART_Receive_IT(&huart3, (uint8_t*)&Rx_data, 1);
   HAL_TIM_Base_Start_IT(&htim3);  //timer SD card
+  HAL_TIM_Base_Start_IT(&htim11); //przemiatanie klawiaturki
+  /* Wyswietlacz*/
+  ILI9341_Init();//initial driver setup to drive ili9341
+  //HAL_TIM_Base_Start_IT(&htim13);
 
   internetprawdepowie();
 
@@ -206,7 +229,7 @@ int main(void)
 //		  //zegarmistrzswiatla();
 //		  HAL_RTC_GetTime(&hrtc, &czas1, RTC_FORMAT_BIN);
 //		  HAL_RTC_GetDate(&hrtc, &date1, RTC_FORMAT_BIN);
-//		  get_sensor_data(&heat_d);
+		  get_sensor_data(&heat_d);
 //		  user_f_write (&fs, &fil, "log.txt", &czas1, &date1, &heat_d);
 //		  user_f_read(&fs, &fil, "log.txt");
 //	  }
@@ -276,14 +299,32 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef *htim)
 	  cycle_heater();
   }
 
-  if (htim->Instance == TIM3)
+//  if (htim->Instance == TIM3)
+//  {
+//	  HAL_RTC_GetTime(&hrtc, &czas1, RTC_FORMAT_BIN);
+//	  HAL_RTC_GetDate(&hrtc, &date1, RTC_FORMAT_BIN);
+//	  get_sensor_data(&heat_d);
+//	  user_f_write (&fs, &fil, "log.txt", &czas1, &date1, &heat_d);
+//	  //user_f_read(&fs, &fil, "log.txt");
+//  }
+  if (htim->Instance == TIM11)
   {
-	  HAL_RTC_GetTime(&hrtc, &czas1, RTC_FORMAT_BIN);
-	  HAL_RTC_GetDate(&hrtc, &date1, RTC_FORMAT_BIN);
-	  get_sensor_data(&heat_d);
-	  user_f_write (&fs, &fil, "log.txt", &czas1, &date1, &heat_d);
-	  //user_f_read(&fs, &fil, "log.txt");
+	  key = read_keypad();
+	  if (key != none){bufor_mieszka = wpisywanie_klawiatur(key, &idx_buf);}
+	  HAL_UART_Transmit(&huart3, &key, strlen(&key), 100);
   }
+  if (htim->Instance == TIM13)
+    {
+	  int length = snprintf((char*)wyswietlacz,50,
+	  			"%f", heat_d.temperature);
+
+  		ILI9341_Fill_Screen(WHITE);
+  		ILI9341_Set_Rotation(SCREEN_HORIZONTAL_2);
+  		ILI9341_Draw_Text("Slow draw by selecting", 10, 10, BLACK, 1, WHITE);
+  		ILI9341_Draw_Text(wyswietlacz, 10, 20, BLACK, 1, WHITE);
+
+//  		ILI9341_Fill_Screen(WHITE);
+    }
 }
 /* USER CODE END 4 */
 

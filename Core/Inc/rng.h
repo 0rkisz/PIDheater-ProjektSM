@@ -1,9 +1,9 @@
 /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
-  * @file    tim.h
+  * @file    rng.h
   * @brief   This file contains all the function prototypes for
-  *          the tim.c file
+  *          the rng.c file
   ******************************************************************************
   * @attention
   *
@@ -18,8 +18,8 @@
   */
 /* USER CODE END Header */
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __TIM_H__
-#define __TIM_H__
+#ifndef __RNG_H__
+#define __RNG_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,32 +27,19 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "stm32f7xx_hal_rng.h"
 
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
 
-extern TIM_HandleTypeDef htim3;
-
-extern TIM_HandleTypeDef htim9;
-
-extern TIM_HandleTypeDef htim10;
-
-extern TIM_HandleTypeDef htim11;
-
-extern TIM_HandleTypeDef htim13;
+extern RNG_HandleTypeDef hrng;
 
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
 
-void MX_TIM3_Init(void);
-void MX_TIM9_Init(void);
-void MX_TIM10_Init(void);
-void MX_TIM11_Init(void);
-void MX_TIM13_Init(void);
-
-void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+void MX_RNG_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
@@ -62,5 +49,5 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 }
 #endif
 
-#endif /* __TIM_H__ */
+#endif /* __RNG_H__ */
 
