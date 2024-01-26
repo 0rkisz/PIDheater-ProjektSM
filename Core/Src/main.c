@@ -169,20 +169,16 @@ int main(void)
   internetprawdepowie();
 
   zegarmistrzswiatla();
-  uint8_t k=10;
-  while(k>2)
-  {
-	  k--;
-	  MX_LWIP_Process();
-	  HAL_Delay(1000);
-  }
-  k=100;
+
+  MX_LWIP_Process();
+
+
   mqtt_client_t* client;
   client = mqtt_client_new();
-  	  if(client != NULL)
-  	  {
-  		  mqtt_connect_to_broker(client);
-  	  }
+  if(client != NULL)
+  {
+	  mqtt_connect_to_broker(client);
+  }
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -193,15 +189,12 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	  MX_LWIP_Process();
-	  HAL_Delay(10);
-	  k--;
-	  if(k==0)
-	  {
-		  k=100;
-		  zegarmistrzswiatla();
 
-		  if(mqtt_client_is_connected(client))
-		  {
+
+
+
+	  if(mqtt_client_is_connected(client))
+	  {
 			  uint16_t message_length = 0;
 			  message_length = snprintf(message,49,"\"Cebularz\":%0.3f",idk);
 
@@ -212,8 +205,8 @@ int main(void)
 			  if(err != ERR_OK)
 			  {
 
-			  }		  }
-	  }
+			  }	  }
+
 	  //cycle_heater(); // uruchomienie tego w taki sposób grozi poparzeniem lol
 
 

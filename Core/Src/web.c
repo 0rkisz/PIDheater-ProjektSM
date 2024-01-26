@@ -78,9 +78,9 @@ void mqtt_connect_to_broker(mqtt_client_t *client)
 
 	do{
 		err = mqtt_client_connect(client, &mqtt_broker_addr, MQTT_PORT, mqtt_connection_cb, 0, &ci);
-		HAL_Delay(1000);
+		HAL_Delay(100);
 		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
-	} while (err != ERR_OK);
+	} while (err != ERR_OK || err != ERR_ISCONN );
 }
 void mqtt_connection_cb(mqtt_client_t *client, void *arg, mqtt_connection_status_t status)
 {
