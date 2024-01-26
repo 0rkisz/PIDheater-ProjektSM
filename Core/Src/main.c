@@ -43,6 +43,13 @@
 #include "stdio.h"
 #include "user_microSD.h"
 //#include "lwip/apps/sntp.h"
+  /* klawiaturka*/
+#include "klawiatur.h"
+
+/*Wyswietlacz*/
+#include "ILI9341_STM32_Driver.h"
+#include "ILI9341_GFX.h"
+#include "snow_tiger.h"
 
 
 /* USER CODE END Includes */
@@ -68,6 +75,11 @@
 struct heater_data heat_d;
 struct pid_config piajdi;
 int Tem,IP1,IP2,IP3,IP4;
+
+/*klawiaturka*/
+//bufor przechowujący dwie cyfry zadanej temperatury do zapodania mieszkowi
+int bufor_mieszka;
+int idx_buf = 0;
 
 char Rx_data[1], Rx_Buffer[50], Transfer_cplt;
 uint16_t Rx_indx;
@@ -256,11 +268,18 @@ int main(void)
   MX_TIM10_Init();
   MX_RTC_Init();
   MX_TIM3_Init();
+  MX_TIM11_Init();
+  MX_SPI5_Init();
+  MX_TIM13_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_PWM_Start(&htim9, TIM_CHANNEL_1);
   HAL_TIM_Base_Start_IT(&htim10);
   HAL_UART_Receive_IT(&huart3, (uint8_t*)&Rx_data, 1);
   HAL_TIM_Base_Start_IT(&htim3);  //timer SD card
+  HAL_TIM_Base_Start_IT(&htim11); //przemiatanie klawiaturki
+  /* Wyswietlacz*/
+  ILI9341_Init();//initial driver setup to drive ili9341
+  //HAL_TIM_Base_Start_IT(&htim13);
 
   internetprawdepowie();
 
@@ -395,18 +414,37 @@ void SystemClock_Config(void)
 /* USER CODE BEGIN 4 */
 void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef *htim)
 {
-
   if (htim->Instance == htim10.Instance)
   {
 	  cycle_heater();
   }
 
-  if (htim->Instance == TIM3)
+//  if (htim->Instance == TIM3)
+//  {
+//	  HAL_RTC_GetTime(&hrtc, &czas1, RTC_FORMAT_BIN);
+//	  HAL_RTC_GetDate(&hrtc, &date1, RTC_FORMAT_BIN);
+//	  get_sensor_data(&heat_d);
+//	  user_f_write (&fs, &fil, "log.txt", &czas1, &date1, &heat_d);
+//	  //user_f_read(&fs, &fil, "log.txt");
+//  }
+  if (htim->Instance == TIM11)
   {
-	  kartasd = 1;
-	  //user_f_write (&fs, &fil, "log.txt", &czas1, &date1, &heat_d);
-	  //user_f_read(&fs, &fil, "log.txt");
+	  key = read_keypad();
+	  if (key != none){bufor_mieszka = wpisywanie_klawiatur(key, &idx_buf);}
+	  HAL_UART_Transmit(&huart3, &key, strlen(&key), 100);
   }
+  if (htim->Instance == TIM13)
+    {
+	  int length = snprintf((char*)wyswietlacz,50,
+	  			"%f", heat_d.temperature);
+
+  		ILI9341_Fill_Screen(WHITE);
+  		ILI9341_Set_Rotation(SCREEN_HORIZONTAL_2);
+  		ILI9341_Draw_Text("Slow draw by selecting", 10, 10, BLACK, 1, WHITE);
+  		ILI9341_Draw_Text(wyswietlacz, 10, 20, BLACK, 1, WHITE);
+
+//  		ILI9341_Fill_Screen(WHITE);
+    }
 }
 /* USER CODE END 4 */
 
@@ -441,4 +479,5 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
+
 
