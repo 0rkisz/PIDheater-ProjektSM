@@ -1,6 +1,7 @@
 #include "user_microSD.h"
 #include "usart.h"
-
+#include "string.h"
+#include "stdio.h"
 
 
 // sending to UART

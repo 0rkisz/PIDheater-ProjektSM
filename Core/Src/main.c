@@ -41,18 +41,15 @@
 #include "fatfs_sd.h"
 #include "string.h"
 #include "stdio.h"
-#include "stdlib.h"
 #include "user_microSD.h"
-
-/* klawiaturka*/
+//#include "lwip/apps/sntp.h"
+  /* klawiaturka*/
 #include "klawiatur.h"
 
 /*Wyswietlacz*/
 #include "ILI9341_STM32_Driver.h"
 #include "ILI9341_GFX.h"
 #include "snow_tiger.h"
-
-//#include "lwip/apps/sntp.h"
 
 
 /* USER CODE END Includes */
@@ -76,9 +73,18 @@
 
 /* USER CODE BEGIN PV */
 struct heater_data heat_d;
+struct pid_config piajdi;
+int Tem,IP1,IP2,IP3,IP4;
 
-char Rx_data[2], Rx_Buffer[20], Transfer_cplt, wyswietlacz[50];
+/*klawiaturka*/
+//bufor przechowujący dwie cyfry zadanej temperatury do zapodania mieszkowi
+int bufor_mieszka;
+int idx_buf = 0;
+
+char Rx_data[1], Rx_Buffer[50], Transfer_cplt;
 uint16_t Rx_indx;
+float idk = 69.9;
+char message[50];
 
 //RTC_TimeTypeDef czas;
 //RTC_DateTypeDef date;
@@ -88,12 +94,7 @@ RTC_DateTypeDef date1;
 /* microSD card*/
 FATFS fs;
 FIL fil;
-
-/*klawiaturka*/
-//bufor przechowujący dwie cyfry zadanej temperatury do zapodania mieszkowi
-int bufor_mieszka;
-int idx_buf = 0;
-
+uint8_t kartasd;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -104,7 +105,9 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef *htim);
+
+
+
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 
@@ -114,7 +117,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 		//int j=0;
 		if (Rx_indx==0) {for (i=0;i<22;i++) Rx_Buffer[i]=0;} //clear Rx_Buffer before receiving new data
 
-		if (Rx_data[0]!=13)	//if received data different from ascii 13 (enter)
+		if (Rx_data[0]!=10)	//if received data different from ascii 13 (enter)
 			{
 			Rx_Buffer[Rx_indx++]=Rx_data[0];	//add data to Rx_Buffer
 			}
@@ -128,21 +131,95 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 		if (Transfer_cplt == 1)
 		{
 
-			//for (j=0;j<3;j++) preVal[j]=&Rx_Buffer[j+1];
-			//preVal=&Rx_Buffer[1];
-			int a,b,c,d;
-			a=b=c=d=0;
-			char string[2];
-			sscanf(Rx_Buffer,"%2s=%d.%d.%d.%d",string,&a,&b,&c,&d);
-			if(strcmp(string,"ip")==0)
-			{
-				sntpreconfig(&a, &b, &c, &d);
-			}
+            //for (j=0;j<3;j++) preVal[j]=&Rx_Buffer[j+1];
+            //preVal=&Rx_Buffer[1];
+        	uint32_t receive_crc;
+            int IP11,IP21,IP31,IP41;
+            float P1,I1,D1,Tem1;
+            Tem1=P1=I1=D1=IP11=IP21=IP31=IP41=0;
 
+            //char string[20];
+            sscanf(Rx_Buffer,"Tem=%f;P=%f;I=%f;D=%f;IP=%d.%d.%d.%d;",&Tem1,&P1,&I1,&D1,&IP11,&IP21,&IP31,&IP41);
+            receive_crc = HAL_CRC_Calculate(&hcrc, (uint32_t*)Rx_Buffer, sizeof(Rx_Buffer));
+            if (Tem1 == 1224)
+            {
 
+             }
+             if(Tem1 != 1224)
+             {
+//               	Tem = Tem1;
+            	 update_setpoint(&Tem1);
+              }
+              if (P1 == 1224)
+              {
+                 piajdi.P = piajdi.P;
+               }
+              if(P1 != 1224)
+               {
+            	  piajdi.P = P1;
+               }
+              if(I1 == 1224)
+              {
+            	  piajdi.I = piajdi.I;
+              	  }
+               if(I1 != 1224)
+               {
+            	   piajdi.I = I1;
+                }
+                if(D1 == 1224)
+                 {
+                	piajdi.D = piajdi.D;
+            	 }
+                 if(D1 != 1224)
+                 {
+                	 piajdi.D = D1;
+                 }
+                 if(IP11 == 1224)
+                 {
+                    IP1 = IP1;
+                  }
+                  if(IP11 != 1224)
+                  {
+                    IP1 = IP11;
+                  }
+                  if(IP21 == 1224)
+                  {
+                    IP2 = IP2;
+                   }
+                   if(IP21 != 1224)
+                   {
+                     IP2 = IP21;
+                    }
+                   if(IP31 == 1224)
+                    {
+                       IP3 = IP3;
+                     }
+                    if(IP31 != 1224)
+                     {
+                       IP3 = IP31;
+                      }
+                     if(IP41 == 1224)
+                      {
+                       IP4 = IP4;
+                       }
+                      if(IP41 != 1224)
+                       {
+                      	IP4 = IP41;
+                       }
 
+            //sscanf(Rx_Buffer,"%d",string,&a,&b,&c,&d);
 
-			Transfer_cplt = 0;
+////            if(strcmp(string,"ip")==0)1
+////            {
+////            	sntpreconfig(&a, &b, &c, &d);
+////            }
+//
+//
+//
+            update_pid(&piajdi);
+            sntpreconfig(&IP1, &IP2, &IP3, &IP4);
+            Transfer_cplt = 0;
+//
 
 		}
 
@@ -211,6 +288,17 @@ int main(void)
 
   user_f_clear (&fs, &fil, "log.txt");
 
+  char full[120];
+  uint16_t len;
+  uint32_t crc8 = 0;
+  mqtt_client_t* client;
+  MX_LWIP_Process();
+    client = mqtt_client_new();
+    if(client != NULL)
+    {
+  	  mqtt_connect_to_broker(client);
+
+    }
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -221,6 +309,38 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	  MX_LWIP_Process();
+
+	  if (kartasd==1)
+	  {
+		  HAL_RTC_GetTime(&hrtc, &czas1, RTC_FORMAT_BIN);
+		  HAL_RTC_GetDate(&hrtc, &date1, RTC_FORMAT_BIN);
+		  get_sensor_data(&heat_d);
+		  user_f_write (&fs, &fil, "log.txt", &czas1, &date1, &heat_d);
+		  kartasd = 0;
+
+
+		  len  = snprintf(full,sizeof(full),"Ob=%f;Tem=%f;Zad=%f;P=%f;I=%f;D=%f;IP=%d.%d.%d.%d;crc:%02X\r\n",heat_d.temperature,heat_d.xref,heat_d.u,piajdi.P,piajdi.I,piajdi.D,IP1,IP2,IP3,IP4,(uint8_t)crc8);
+		  crc8 = HAL_CRC_Calculate(&hcrc, (uint32_t*)full, sizeof(full));
+		  HAL_UART_Transmit_IT(&huart3, (uint8_t*)full, len);
+
+		  if(mqtt_client_is_connected(client))
+		  	  {
+		  			  uint16_t message_length = 0;
+		  			  message_length = snprintf(message,49,"\"Cebularz\":%0.3f",idk);
+
+		  			  err_t err;
+		  			  u8_t qos = 2;
+		  			  u8_t retain = 0;
+		  			  err = mqtt_publish(client, "stm/test", full, len, qos, retain, mqtt_pub_request_cb, 0);
+		  			  if(err != ERR_OK)
+		  			  {
+
+		  			  }
+		  			  err = mqtt_subscribe(client, "stm/set",qos,mqtt_sub_request_cb,0);
+		  	  }
+
+
+	  }
 //	  HAL_Delay(10);
 //	  k--;
 //	  if(k==0)
@@ -229,7 +349,7 @@ int main(void)
 //		  //zegarmistrzswiatla();
 //		  HAL_RTC_GetTime(&hrtc, &czas1, RTC_FORMAT_BIN);
 //		  HAL_RTC_GetDate(&hrtc, &date1, RTC_FORMAT_BIN);
-		  get_sensor_data(&heat_d);
+//		  get_sensor_data(&heat_d);
 //		  user_f_write (&fs, &fil, "log.txt", &czas1, &date1, &heat_d);
 //		  user_f_read(&fs, &fil, "log.txt");
 //	  }
@@ -359,3 +479,5 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
+
+
